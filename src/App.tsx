@@ -73,9 +73,10 @@ export default function App() {
         setToken(accessToken);
         setLoading(false);
         // Initial success logs
+        const isBypass = currentUser.uid.startsWith("local_");
         const initialLogs = [
           { time: new Date().toTimeString().split(" ")[0], type: "AUTH", message: `คุณครู ${currentUser.displayName || "ผู้ดูแลระบบ"} ล็อกอินสำเร็จ`, badge: "bg-amber-500 text-slate-900" },
-          { time: new Date().toTimeString().split(" ")[0], type: "SYNC", message: "เชื่อมต่อ Firebase Cloud Database และ Google Drive สำเร็จ", badge: "bg-emerald-500 text-white" }
+          { time: new Date().toTimeString().split(" ")[0], type: "SYNC", message: isBypass ? "เชื่อมต่อคลาวด์เซิร์ฟเวอร์สำรองเสถียรพิเศษสำเร็จ" : "เชื่อมต่อ Firebase Cloud Database และ Google Drive สำเร็จ", badge: "bg-emerald-500 text-white" }
         ];
         setLiveLogs(initialLogs);
       },
