@@ -3,6 +3,7 @@
   "appId": "1:800178097318:web:0e8ab01109d62088bd3867",
   "apiKey": "AIzaSyBU3MT41MfedhOQPtFOJOAbus6kLXt8dMI",
   "authDomain": "logical-chain-zxhgq.firebaseapp.com",
+  "firestoreDatabaseId": "ai-studio-studentportfolio-9c210c46-ae60-42ac-b00e-3f29be32cb5d",
   "storageBucket": "logical-chain-zxhgq.firebasestorage.app",
   "messagingSenderId": "800178097318",
   "measurementId": "",

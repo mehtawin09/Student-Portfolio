@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import React, { useState, useEffect } from "react";
 import { User } from "firebase/auth";
 import {
   collection,
@@ -10,7 +10,7 @@ import {
   deleteDoc,
   Timestamp,
 } from "firebase/firestore";
-import { db, initAuth, googleSignIn, logout, setAccessToken } from "./firebase";
+import { db, initAuth, logout, setAccessToken, loginTeacher } from "./firebase";
 import { Student } from "./types";
 import DashboardStats from "./components/DashboardStats";
 import StudentForm from "./components/StudentForm";
@@ -36,6 +36,9 @@ export default function App() {
   const [token, setToken] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [isLoggingIn, setIsLoggingIn] = useState(false);
+  const [teacherNameInput, setTeacherNameInput] = useState("");
+  const [passwordInput, setPasswordInput] = useState("");
+  const [loginError, setLoginError] = useState("");
 
   // App View state
   const [activeTab, setActiveTab] = useState<"dashboard" | "directory">("dashboard");
@@ -107,18 +110,25 @@ export default function App() {
     return () => unsubscribe();
   }, [user]);
 
-  const handleLogin = async () => {
+  const handleLogin = async (e?: React.FormEvent) => {
+    if (e) e.preventDefault();
+    setLoginError("");
     setIsLoggingIn(true);
     try {
-      const res = await googleSignIn();
-      if (res) {
-        setUser(res.user);
-        setToken(res.accessToken);
-        setAccessToken(res.accessToken);
-      }
-    } catch (err) {
+      const loggedInUser = await loginTeacher(teacherNameInput, passwordInput);
+      setUser(loggedInUser);
+      // Dummy token since it's credentials login
+      setToken("local-session");
+    } catch (err: any) {
       console.error(err);
-      alert("ไม่สามารถเข้าสู่ระบบผ่าน Google ได้ กรุณาลองใหม่อีกครั้ง");
+      const errMsg = err.message || "";
+      if (errMsg.includes("operation-not-allowed") || (err.code && err.code.includes("operation-not-allowed"))) {
+        setLoginError(
+          "โปรดเปิดใช้งานผู้ให้บริการล็อกอิน 'อีเมล/รหัสผ่าน' (Email/Password) ใน Firebase Console ก่อนใช้บริการนี้ โดยเข้าไปที่: Firebase Console > Authentication > Sign-in method > เพิ่มผู้ให้บริการใหม่ > เลือก 'อีเมล/รหัสผ่าน' แล้วกดเปิดใช้งานและบันทึก"
+        );
+      } else {
+        setLoginError(errMsg || "เกิดข้อผิดพลาดในการเข้าสู่ระบบ");
+      }
     } finally {
       setIsLoggingIn(false);
     }
@@ -253,13 +263,13 @@ export default function App() {
         <div className="absolute top-0 left-0 w-96 h-96 bg-indigo-500/10 rounded-full blur-3xl -translate-x-1/2 -translate-y-1/2"></div>
         <div className="absolute bottom-0 right-0 w-96 h-96 bg-violet-500/10 rounded-full blur-3xl translate-x-1/2 translate-y-1/2"></div>
 
-        <div className="w-full max-w-md bg-slate-900 border border-slate-800 rounded-3xl p-8 space-y-8 shadow-2xl relative z-10 text-center">
-          <div className="space-y-3">
+        <form onSubmit={handleLogin} className="w-full max-w-md bg-slate-900 border border-slate-800 rounded-3xl p-8 space-y-6 shadow-2xl relative z-10">
+          <div className="space-y-2 text-center">
             <div className="w-16 h-16 bg-gradient-to-tr from-indigo-500 to-indigo-600 text-white rounded-2xl flex items-center justify-center mx-auto shadow-indigo-500/20 shadow-lg">
               <BookOpen size={32} />
             </div>
             <h1 className="text-2xl font-black text-white tracking-tight">Student Portfolio</h1>
-            <p className="text-xs text-slate-400">ระบบสร้างและบันทึกแฟ้มสะสมงานนักเรียนปฐมวัย - ประถมศึกษา</p>
+            <p className="text-xs text-slate-400">ระบบบันทึกและจัดพิมพ์แฟ้มสะสมงานอิเล็กทรอนิกส์</p>
           </div>
 
           <div className="border border-slate-800 bg-slate-950/50 p-4 rounded-2xl space-y-1 text-center">
@@ -267,35 +277,60 @@ export default function App() {
             <p className="text-xs text-slate-300">ต.ร้องกวาง อ.ร้องกวาง จ.แพร่</p>
           </div>
 
-          {/* gsi-material-button matching the skill specification */}
-          <div className="flex flex-col items-center">
-            {isLoggingIn ? (
-              <button disabled className="w-full py-2.5 px-4 bg-slate-800 text-slate-400 font-semibold rounded-xl flex items-center justify-center gap-2 text-sm border border-slate-700">
-                <Loader2 className="animate-spin" size={18} />
-                กำลังเปิดสิทธิ์ Google Drive ...
-              </button>
-            ) : (
-              <button
-                onClick={handleLogin}
-                className="group relative w-full bg-white hover:bg-slate-50 text-slate-800 border border-slate-200 transition-all rounded-xl py-2.5 px-4 flex items-center justify-center gap-3 font-semibold text-sm shadow-md hover:shadow-lg hover:-translate-y-0.5 active:translate-y-0"
-              >
-                <div className="w-5 h-5 flex-shrink-0">
-                  <svg version="1.1" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" style={{ display: "block" }}>
-                    <path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"></path>
-                    <path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"></path>
-                    <path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"></path>
-                    <path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.15 1.45-4.92 2.3-8.16 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"></path>
-                  </svg>
-                </div>
-                <span>เข้าสู่ระบบด้วยบัญชี Google</span>
-              </button>
-            )}
+          <div className="space-y-4 text-left">
+            <div>
+              <label className="block text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-1.5">
+                ชื่อครูผู้สอน (พิมพ์ชื่อผู้รับผิดชอบ)
+              </label>
+              <input
+                type="text"
+                required
+                placeholder="ระบุชื่อครูประจำชั้น/ผู้บันทึก..."
+                value={teacherNameInput}
+                onChange={(e) => setTeacherNameInput(e.target.value)}
+                className="w-full px-4 py-2.5 bg-slate-950 border border-slate-800 text-white text-xs rounded-xl focus:outline-none focus:border-indigo-500 transition-all placeholder:text-slate-600"
+              />
+            </div>
+
+            <div>
+              <label className="block text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-1.5">
+                รหัสผ่านสำหรับเข้าใช้งานระบบ
+              </label>
+              <input
+                type="password"
+                required
+                placeholder="ป้อนรหัสผ่าน..."
+                value={passwordInput}
+                onChange={(e) => setPasswordInput(e.target.value)}
+                className="w-full px-4 py-2.5 bg-slate-950 border border-slate-800 text-white text-xs rounded-xl focus:outline-none focus:border-indigo-500 transition-all placeholder:text-slate-600"
+              />
+              <p className="text-[10px] text-slate-500 mt-1">
+                *รหัสผ่านสำหรับคุณครูในการเข้าใช้ระบบคือ <span className="text-indigo-400 font-extrabold select-all">BRK1234</span>
+              </p>
+            </div>
           </div>
 
-          <p className="text-[10px] text-slate-500">
-            ระบบต้องการสิทธิ์เข้าถึง Google Drive เพื่อเก็บไฟล์รูปภาพและเกียรติบัตรอย่างปลอดภัยในไดรฟ์ส่วนตัวของท่าน
-          </p>
-        </div>
+          {loginError && (
+            <div className="p-3 bg-rose-500/10 border border-rose-500/20 text-rose-400 text-xs rounded-xl text-center font-semibold">
+              {loginError}
+            </div>
+          )}
+
+          <button
+            type="submit"
+            disabled={isLoggingIn}
+            className="w-full bg-indigo-600 hover:bg-indigo-700 disabled:bg-indigo-600/50 text-white font-bold rounded-xl py-3 px-4 flex items-center justify-center gap-2 text-xs shadow-md transition-all cursor-pointer"
+          >
+            {isLoggingIn ? (
+              <>
+                <Loader2 className="animate-spin" size={16} />
+                กำลังเปิดสิทธิ์และดึงฐานข้อมูล...
+              </>
+            ) : (
+              "เข้าสู่ระบบแฟ้มสะสมงานของฉัน"
+            )}
+          </button>
+        </form>
       </div>
     );
   }

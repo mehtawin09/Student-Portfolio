@@ -163,6 +163,23 @@ export default function StudentForm({ student, onSave, onCancel, accessToken }: 
 
     setUploadingField(fieldKey);
     try {
+      // Check if we are logged in with name & password instead of real Google OAuth token
+      if (!accessToken || accessToken === "local-session") {
+        const reader = new FileReader();
+        reader.onload = () => {
+          const base64Data = reader.result as string;
+          callback("local-base64-" + Date.now(), base64Data);
+          alert("บันทึกไฟล์ภาพเข้าระบบฐานข้อมูลคลาวด์เรียบร้อยแล้ว!");
+          setUploadingField(null);
+        };
+        reader.onerror = () => {
+          alert("ไม่สามารถอ่านไฟล์ภาพได้ กรุณาลองใหม่อีกครั้ง");
+          setUploadingField(null);
+        };
+        reader.readAsDataURL(file);
+        return;
+      }
+
       const parentFolderId = await getOrCreateMainFolder(accessToken);
       const cleanFileName = `${firstName}_${lastName}_${fieldKey}_${file.name}`;
       const result = await uploadFileToDrive(file, cleanFileName, parentFolderId, accessToken);
@@ -173,7 +190,9 @@ export default function StudentForm({ student, onSave, onCancel, accessToken }: 
       console.error(err);
       alert(`อัปโหลดล้มเหลว: ${err.message}`);
     } finally {
-      setUploadingField(null);
+      if (accessToken && accessToken !== "local-session") {
+        setUploadingField(null);
+      }
     }
   };
 

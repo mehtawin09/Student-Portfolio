@@ -5,7 +5,10 @@ import {
   GoogleAuthProvider,
   onAuthStateChanged,
   User,
-  signOut
+  signOut,
+  signInWithEmailAndPassword,
+  createUserWithEmailAndPassword,
+  updateProfile
 } from "firebase/auth";
 import { getFirestore, doc, getDocFromServer } from "firebase/firestore";
 import firebaseConfig from "../firebase-applet-config.json";
@@ -29,17 +32,48 @@ export const initAuth = (
 ) => {
   return onAuthStateChanged(auth, async (user: User | null) => {
     if (user) {
-      if (cachedAccessToken) {
-        if (onAuthSuccess) onAuthSuccess(user, cachedAccessToken);
-      } else {
-        // If we have a user but no cached token, they need to sign in again to obtain a fresh Drive access token.
-        if (onAuthFailure) onAuthFailure();
-      }
+      const token = cachedAccessToken || "local-session";
+      if (onAuthSuccess) onAuthSuccess(user, token);
     } else {
       cachedAccessToken = null;
       if (onAuthFailure) onAuthFailure();
     }
   });
+};
+
+// Teacher name & password login helper
+export const loginTeacher = async (teacherName: string, password: string): Promise<User> => {
+  if (password !== "BRK1234") {
+    throw new Error("รหัสผ่านไม่ถูกต้อง กรุณาใช้รหัสผ่าน BRK1234");
+  }
+  
+  if (!teacherName.trim()) {
+    throw new Error("กรุณากรอกชื่อครูผู้สอน");
+  }
+
+  // Convert name to hex representation to make it a completely safe and reproducible email prefix for any Thai characters
+  const encoder = new TextEncoder();
+  const bytes = encoder.encode(teacherName.trim());
+  let hex = "";
+  for (const b of bytes) {
+    hex += b.toString(16).padStart(2, "0");
+  }
+  const email = `teacher_${hex}@brk-portfolio.com`;
+
+  try {
+    const userCredential = await signInWithEmailAndPassword(auth, email, "BRK1234");
+    return userCredential.user;
+  } catch (error: any) {
+    try {
+      const userCredential = await createUserWithEmailAndPassword(auth, email, "BRK1234");
+      if (userCredential.user) {
+        await updateProfile(userCredential.user, { displayName: teacherName.trim() });
+      }
+      return userCredential.user;
+    } catch (signUpError: any) {
+      throw new Error(`ไม่สามารถเข้าสู่ระบบหรือสร้างบัญชีใหม่ได้: ${signUpError.message}`);
+    }
+  }
 };
 
 // Sign in with Google (called from user click)
