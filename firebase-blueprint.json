@@ -1,0 +1,100 @@
+{
+  "entities": {
+    "student_portfolio": {
+      "title": "Student Portfolio",
+      "description": "A student's complete educational portfolio, including personal profile, education history, grade records, developmental evaluation, proud works, awards, activity certificates, special talents, and evaluations from parents and teachers.",
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the student portfolio."
+        },
+        "teacherUid": {
+          "type": "string",
+          "description": "The UID of the teacher managing this student portfolio."
+        },
+        "firstName": {
+          "type": "string",
+          "description": "Student first name."
+        },
+        "lastName": {
+          "type": "string",
+          "description": "Student last name."
+        },
+        "gender": {
+          "type": "string",
+          "enum": ["Male", "Female"],
+          "description": "Student gender."
+        },
+        "nickname": {
+          "type": "string",
+          "description": "Student nickname."
+        },
+        "currentGrade": {
+          "type": "string",
+          "enum": [
+            "Kindergarten 1",
+            "Kindergarten 2",
+            "Kindergarten 3",
+            "Prathom 1",
+            "Prathom 2",
+            "Prathom 3",
+            "Prathom 4",
+            "Prathom 5",
+            "Prathom 6"
+          ],
+          "description": "Student's current class/grade level."
+        },
+        "profile": {
+          "type": "object",
+          "description": "ส่วนที่ 1.1 ประวัติส่วนตัว (Personal Profile details)"
+        },
+        "educationHistory": {
+          "type": "array",
+          "description": "ส่วนที่ 1.4 ประวัติการศึกษา"
+        },
+        "academicRecord": {
+          "type": "object",
+          "description": "ส่วนที่ 1.5 รายงานประวัติผลการเรียน"
+        },
+        "proudWorks": {
+          "type": "array",
+          "description": "ส่วนที่ 2 ความภาคภูมิใจในผลงานการเรียนรู้ 8 กลุ่มสาระการเรียนรู้"
+        },
+        "awards": {
+          "type": "array",
+          "description": "ส่วนที่ 3 ผลงานเด่นรางวัล การประกวด การแข่งขัน"
+        },
+        "activityCertificates": {
+          "type": "array",
+          "description": "ส่วนที่ 4 เกียรติบัตรการเข้าร่วมกิจกรรม การเข้าค่าย ฯลฯ"
+        },
+        "specialTalents": {
+          "type": "array",
+          "description": "ส่วนที่ 5 กิจกรรมความสามารถพิเศษ หน้าที่ที่ได้รับมอบหมาย"
+        },
+        "evaluations": {
+          "type": "object",
+          "description": "แบบประเมินผลสำหรับผู้ปกครองและครูประจำชั้น"
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Creation timestamp."
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Last updated timestamp."
+        }
+      },
+      "required": ["id", "teacherUid", "firstName", "lastName", "gender", "currentGrade"]
+    }
+  },
+  "firestore": {
+    "/students/{studentId}": {
+      "schema": "student_portfolio",
+      "description": "Collection of student portfolios managed by teachers."
+    }
+  }
+}

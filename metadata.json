@@ -1,0 +1,8 @@
+{
+  "name": "Student Portfolio",
+  "description": "ระบบสร้างแฟ้มสะสมผลงานนักเรียนระดับชั้นอนุบาล 1 - ประถมศึกษาปีที่ 6 พร้อมระบบบันทึกข้อมูล Firebase อัปโหลดรูปภาพลง Google Drive และแดชบอร์ดสรุปผลการเรียน",
+  "requestFramePermissions": [],
+  "majorCapabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
+}
